@@ -1,0 +1,130 @@
+---
+import BasketProfil from "./BasketProfil.astro";
+import BasketDessus from "./BasketDessus.astro";
+
+// <input type="color"> n'accepte que des couleurs au format hexadécimal (#rrggbb)
+let configuration_basket = {
+  semelle: "#ffffff",
+  empeigne: "#ffffff",
+  pointe: "#ffffff",
+  oeillet: "#ffffff",
+  bande: "#ffffff",
+  languette: "#ffffff",
+  lacet: "#ffffff",
+  trimestre: "#ffffff",
+};
+
+Object.entries({ semelle: "#fff", lacet: "#fff" });
+
+export const prerender = false;
+
+if (Astro.request.method === "POST") {
+  const formData = await Astro.request.formData();
+  configuration_basket = {
+    semelle: formData.get("semelle")?.toString() ?? "#ffffff",
+    empeigne: formData.get("empeigne")?.toString() ?? "#ffffff",
+    pointe: formData.get("pointe")?.toString() ?? "#ffffff",
+    oeillet: formData.get("oeillet")?.toString() ?? "#ffffff",
+    bande: formData.get("bande")?.toString() ?? "#ffffff",
+    languette: formData.get("languette")?.toString() ?? "#ffffff",
+    lacet: formData.get("lacet")?.toString() ?? "#ffffff",
+    trimestre: formData.get("trimestre")?.toString() ?? "#ffffff",
+  };
+}
+---
+
+<div class="configurateur" data-configuration-defaut={JSON.stringify(configuration_basket)}>
+  <BasketProfil {...configuration_basket} />
+  <BasketDessus {...configuration_basket} />
+
+  <form
+    class="flex flex-wrap items-center justify-center gap-4 py-2"
+    method="POST"
+    action="/configurateur"
+    enctype="multipart/form-data"
+  >
+    {
+      Object.entries(configuration_basket).map(([partie, couleur]) => (
+        <div class="flex flex-col items-center">
+          <label for={partie}>{partie}</label>
+          <input
+            class="form-input"
+            type="color"
+            id={partie}
+            name={partie}
+            value={couleur}
+          />
+        </div>
+      ))
+    }
+    <button class="btn btn-primary" value="Mettre à jour" >Mettre à jour</button>
+  </form>
+
+  <div
+    class="configurateur"
+    data-configuration-defaut={JSON.stringify(configuration_basket)}
+  >
+    <button class="btn btn-warning reinitialiser">Réinitialiser</button>
+  </div>
+</div>
+
+<script>
+  // Le code du frontmatter s'exécute sur le serveur : l'interactivité doit être gérée ici, dans le navigateur
+  document
+    .querySelectorAll<HTMLElement>(".configurateur")
+    .forEach((configurateur) => {
+      const inputs = configurateur.querySelectorAll<HTMLInputElement>(
+        'input[type="color"]',
+      );
+
+      // colorier() applique la couleur choisie à la partie correspondante du SVG
+      const colorier = (partie: string, couleur: string) => {
+        // Chaque partie du SVG porte une classe égale au nom de l'input (semelle, lacet, ...)
+        configurateur.querySelectorAll(`svg .${partie}`).forEach((element) => {
+          element.setAttribute("fill", couleur);
+        });
+      };
+
+      // à chaque modification d'un input, on colorie la partie correspondante
+      inputs.forEach((input) => {
+        input.addEventListener("input", () =>
+          colorier(input.name, input.value),
+        );
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLElement>(".configurateur")
+    .forEach((configurateur) => {
+      // configuration_basket n'existe pas ici : on la relit depuis l'attribut data-configuration-defaut.
+      // dataset convertit le nom en camelCase (data-configuration-defaut -> dataset.configurationDefaut)
+      const configurationDefaut: Record<string, string> = JSON.parse(
+        configurateur.dataset.configurationDefaut ?? "{}",
+      );
+
+      const inputs = configurateur.querySelectorAll<HTMLInputElement>(
+        'input[type="color"]',
+      );
+
+      const colorier = (partie: string, couleur: string) => {
+        configurateur.querySelectorAll(`svg .${partie}`).forEach((element) => {
+          element.setAttribute("fill", couleur);
+        });
+      };
+
+      inputs.forEach((input) => {
+        input.addEventListener("input", () =>
+          colorier(input.name, input.value),
+        );
+      });
+
+      configurateur
+        .querySelector(".reinitialiser")
+        ?.addEventListener("click", () => {
+          inputs.forEach((input) => {
+            input.value = configurationDefaut[input.name];
+            colorier(input.name, input.value);
+          });
+        });
+    });
+</script>
