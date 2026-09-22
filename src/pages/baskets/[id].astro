@@ -6,13 +6,9 @@ import ModifierBasket from "../../components/modifierBasket.astro";
 import db from "../../lib/db.js";
 import type { Basket } from "../../lib/db.js";
 
-if (Astro.request.method === "POST") {
-	const formData = await Astro.request.formData();
-
-	if (formData.get("action") === "delete") {
-		db.run("DELETE FROM BASKETS WHERE id = ?", [Number(Astro.params.id)]);
-		return Astro.redirect("/baskets", 303);
-	}
+if (Astro.request.method === "POST" && Astro.url.searchParams.get("action") === "delete") {
+	db.run("DELETE FROM BASKETS WHERE id = ?", [Number(Astro.params.id)]);
+	return Astro.redirect("/baskets", 303);
 }
 
 const basket = db
