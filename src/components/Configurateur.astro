@@ -47,7 +47,11 @@ if (Astro.request.method === "POST")
     configuration_basket.lacet,
     configuration_basket.trimestre,
   ],
-  )};
+  );
+
+  // Redirige après l'insertion pour empêcher la répétition du POST au rechargement.
+  return Astro.redirect("/baskets", 303);
+}
 ---
 
 <div class="configurateur" data-configuration-defaut={JSON.stringify(configuration_basket)}>
@@ -87,6 +91,13 @@ if (Astro.request.method === "POST")
 </div>
 
 <script>
+  document.querySelectorAll<HTMLFormElement>('form[action="/configurateur"]').forEach((formulaire) => {
+    formulaire.addEventListener("submit", () => {
+      const bouton = formulaire.querySelector<HTMLButtonElement>('button[type="submit"], button:not([type])');
+      if (bouton) bouton.disabled = true;
+    });
+  });
+
   // Le code du frontmatter s'exécute sur le serveur : l'interactivité doit être gérée ici, dans le navigateur
   document
     .querySelectorAll<HTMLElement>(".configurateur")
