@@ -1,8 +1,42 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Configurateur from "../components/Configurateur.astro";
+import db from "../lib/db.js";
 
 export const prerender = false;
+const processedSubmissions = new Set<string>();
+
+if (Astro.request.method === "POST") {
+  const formData = await Astro.request.formData();
+  const submissionId = formData.get("submissionId")?.toString();
+
+  if (submissionId && processedSubmissions.has(submissionId)) {
+    return Astro.redirect("/baskets", 303);
+  }
+
+  if (submissionId) {
+    processedSubmissions.add(submissionId);
+  }
+
+  db.run(
+    `INSERT INTO BASKETS (user_id, description, semelle, empeigne, pointe, oeillet, bande, languette, lacet, trimestre)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      1,
+      formData.get("description")?.toString() ?? "",
+      formData.get("semelle")?.toString() ?? "#ffffff",
+      formData.get("empeigne")?.toString() ?? "#ffffff",
+      formData.get("pointe")?.toString() ?? "#ffffff",
+      formData.get("oeillet")?.toString() ?? "#ffffff",
+      formData.get("bande")?.toString() ?? "#ffffff",
+      formData.get("languette")?.toString() ?? "#ffffff",
+      formData.get("lacet")?.toString() ?? "#ffffff",
+      formData.get("trimestre")?.toString() ?? "#ffffff",
+    ],
+  );
+
+  return Astro.redirect("/baskets", 303);
+}
 ---
 
 <Layout>

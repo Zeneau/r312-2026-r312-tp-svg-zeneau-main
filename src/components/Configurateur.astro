@@ -1,8 +1,6 @@
 ---
 import BasketProfil from "./BasketProfil.astro";
 import BasketDessus from "./BasketDessus.astro";
-import db from "../lib/db.js";
-import type { Basket } from "../lib/db.js";
 // <input type="color"> n'accepte que des couleurs au format hexadécimal (#rrggbb)
 let configuration_basket = {
   semelle: "#ffffff",
@@ -14,44 +12,11 @@ let configuration_basket = {
   lacet: "#ffffff",
   trimestre: "#ffffff",
 };
+const submissionId = crypto.randomUUID();
 
 Object.entries({ semelle: "#fff", lacet: "#fff" });
 
 export const prerender = false;
-
-if (Astro.request.method === "POST") 
-{
-  const formData = await Astro.request.formData();
-  configuration_basket = {
-    semelle: formData.get("semelle")?.toString() ?? "#ffffff",
-    empeigne: formData.get("empeigne")?.toString() ?? "#ffffff",
-    pointe: formData.get("pointe")?.toString() ?? "#ffffff",
-    oeillet: formData.get("oeillet")?.toString() ?? "#ffffff",
-    bande: formData.get("bande")?.toString() ?? "#ffffff",
-    languette: formData.get("languette")?.toString() ?? "#ffffff",
-    lacet: formData.get("lacet")?.toString() ?? "#ffffff",
-    trimestre: formData.get("trimestre")?.toString() ?? "#ffffff",
-  };
-    db.run(
-  `INSERT INTO BASKETS (user_id, description, semelle, empeigne, pointe, oeillet, bande, languette, lacet, trimestre)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  [
-    1, // user_id : à remplacer plus tard par un véritable utilisateur connecté
-    formData.get("description")?.toString() ?? "",
-    configuration_basket.semelle,
-    configuration_basket.empeigne,
-    configuration_basket.pointe,
-    configuration_basket.oeillet,
-    configuration_basket.bande,
-    configuration_basket.languette,
-    configuration_basket.lacet,
-    configuration_basket.trimestre,
-  ],
-  );
-
-  // Redirige après l'insertion pour empêcher la répétition du POST au rechargement.
-  return Astro.redirect("/baskets", 303);
-}
 ---
 
 <div class="configurateur" data-configuration-defaut={JSON.stringify(configuration_basket)}>
@@ -64,6 +29,7 @@ if (Astro.request.method === "POST")
     action="/configurateur"
     enctype="multipart/form-data"
   >
+    <input type="hidden" name="submissionId" value={submissionId} />
     {
       Object.entries(configuration_basket).map(([partie, couleur]) => (
         <div class="flex flex-col items-center">
@@ -78,7 +44,7 @@ if (Astro.request.method === "POST")
         </div>
       ))
     }
-    <button class="btn btn-primary" value="Mettre à jour" >Mettre à jour</button>
+    <button class="btn btn-primary" type="submit">Mettre à jour</button>
     <input type="text" class="textarea" name="description" placeholder="Description du panier">
   </form>
 
