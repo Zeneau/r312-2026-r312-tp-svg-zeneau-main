@@ -58,8 +58,11 @@ const baskets: Basket[] = db.prepare("SELECT * FROM BASKETS").all();
 										))}
 										<span class="ml-1 text-xs font-medium text-base-content/50">Palette personnalisée</span>
 									</div>
-									<div class="card-actions mt-auto justify-end">
+									<div class="card-actions mt-auto justify-between">
 										<a class="btn btn-primary btn-sm" href={`/baskets/${basket.id}`}>Modifier cette basket <span aria-hidden="true">→</span></a>
+										<form method="POST" action={`/baskets/${basket.id}`} onsubmit="return confirm('Supprimer cette basket ?');">
+											<button class="btn btn-error btn-sm" type="submit" name="action" value="delete">Supprimer</button>
+										</form>
 									</div>
 								</div>
 							</article>
