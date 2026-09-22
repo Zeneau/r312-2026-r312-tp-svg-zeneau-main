@@ -1,0 +1,111 @@
+---
+import BasketProfil from "./BasketProfil.astro";
+import BasketDessus from "./BasketDessus.astro";
+import db from "../lib/db.js";
+
+interface Props {
+	id: number;
+	description: string;
+	semelle: string;
+	empeigne: string;
+	pointe: string;
+	oeillet: string;
+	bande: string;
+	languette: string;
+	lacet: string;
+	trimestre: string;
+}
+
+const { id, semelle, empeigne, pointe, oeillet, bande, languette, lacet, trimestre } = Astro.props;
+let { description } = Astro.props;
+
+let configuration_basket = { semelle, empeigne, pointe, oeillet, bande, languette, lacet, trimestre };
+
+export const prerender = false;
+
+if (Astro.request.method === "POST") {
+	const formData = await Astro.request.formData();
+	description = formData.get("description")?.toString() ?? "";
+	configuration_basket = {
+		semelle: formData.get("semelle")?.toString() ?? "#ffffff",
+		empeigne: formData.get("empeigne")?.toString() ?? "#ffffff",
+		pointe: formData.get("pointe")?.toString() ?? "#ffffff",
+		oeillet: formData.get("oeillet")?.toString() ?? "#ffffff",
+		bande: formData.get("bande")?.toString() ?? "#ffffff",
+		languette: formData.get("languette")?.toString() ?? "#ffffff",
+		lacet: formData.get("lacet")?.toString() ?? "#ffffff",
+		trimestre: formData.get("trimestre")?.toString() ?? "#ffffff",
+	};
+
+	db.run(
+		`UPDATE BASKETS
+		 SET description = ?, semelle = ?, empeigne = ?, pointe = ?, oeillet = ?,
+				 bande = ?, languette = ?, lacet = ?, trimestre = ?
+		 WHERE id = ?`,
+		[
+			description,
+			configuration_basket.semelle,
+			configuration_basket.empeigne,
+			configuration_basket.pointe,
+			configuration_basket.oeillet,
+			configuration_basket.bande,
+			configuration_basket.languette,
+			configuration_basket.lacet,
+			configuration_basket.trimestre,
+			id,
+		],
+	);
+}
+---
+
+<div class="configurateur" data-configuration-defaut={JSON.stringify(configuration_basket)}>
+	<BasketProfil {...configuration_basket} />
+	<BasketDessus {...configuration_basket} />
+
+	<form
+		class="flex flex-wrap items-center justify-center gap-4 py-2"
+		name="configurateurBasket"
+		method="POST"
+		action={`/baskets/${id}`}
+		enctype="multipart/form-data"
+	>
+		{
+			Object.entries(configuration_basket).map(([partie, couleur]) => (
+				<div class="flex flex-col items-center">
+					<label for={partie}>{partie}</label>
+					<input class="form-input" type="color" id={partie} name={partie} value={couleur} />
+				</div>
+			))
+		}
+		<input class="input input-bordered" type="text" name="description" value={description ?? ""} placeholder="Nom de la basket" />
+		<button class="btn btn-primary" type="submit">Enregistrer les modifications</button>
+	</form>
+
+	<button class="btn btn-warning reinitialiser" type="button">Réinitialiser</button>
+</div>
+
+<script>
+	document.querySelectorAll<HTMLElement>(".configurateur").forEach((configurateur) => {
+		const configurationDefaut: Record<string, string> = JSON.parse(
+			configurateur.dataset.configurationDefaut ?? "{}",
+		);
+		const inputs = configurateur.querySelectorAll<HTMLInputElement>('input[type="color"]');
+
+		const colorier = (partie: string, couleur: string) => {
+			configurateur.querySelectorAll(`svg .${partie}`).forEach((element) => {
+				element.setAttribute("fill", couleur);
+			});
+		};
+
+		inputs.forEach((input) => {
+			input.addEventListener("input", () => colorier(input.name, input.value));
+		});
+
+		configurateur.querySelector(".reinitialiser")?.addEventListener("click", () => {
+			inputs.forEach((input) => {
+				input.value = configurationDefaut[input.name];
+				colorier(input.name, input.value);
+			});
+		});
+	});
+</script>
